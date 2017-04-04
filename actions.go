@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"os"
 	"os/exec"
@@ -655,4 +656,45 @@ func focus(w *window) {
 	} else {
 		check(xp.SetInputFocusChecked(xConn, xp.InputFocusParent, xWin, eventTime))
 	}
+}
+
+func getPointer() (int16, int16, error) {
+	p, err := xp.QueryPointer(xConn, rootXWin).Reply()
+	if err != nil {
+		return 0, 0, err
+	}
+	if p == nil {
+		// what I should do?
+		return 0, 0, errors.New("failed to get pointer")
+	}
+
+	return p.RootX, p.RootY, nil
+}
+
+func doChangePointerHoriz(_ *workspace, offset interface{}) bool {
+	x, y, err := getPointer()
+	if err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	check(xp.WarpPointerChecked(xConn, xp.WindowNone, rootXWin, 0, 0, 0, 0,
+		int16(x)+offset.(int16),
+		int16(y),
+	))
+	return true
+}
+
+func doChangePointerVert(_ *workspace, offset interface{}) bool {
+	x, y, err := getPointer()
+	if err != nil {
+		log.Println(err.Error())
+		return false
+	}
+
+	check(xp.WarpPointerChecked(xConn, xp.WindowNone, rootXWin, 0, 0, 0, 0,
+		int16(x),
+		int16(y)+offset.(int16),
+	))
+	return true
 }

@@ -10,7 +10,7 @@ const (
 	// wmKeysym is the key to trigger taowm actions. For other possible
 	// values, such as xkSuperL for the 'Windows' key that is typically
 	// between the left Control and Alt keys, see keysym.go.
-	wmKeysym = xkCapsLock
+	wmKeysym = xkSuperL
 
 	// colorXxx are taowm's text and border colors. We assume 24-bit RGB.
 	colorBaseUnfocused  = 0x1f3f1f
@@ -32,7 +32,7 @@ const (
 
 	// quitDuration is the grace period, when quitting, for programs to exit
 	// cleanly.
-	quitDuration = 60 * time.Second
+	quitDuration = 3 * time.Second
 )
 
 // xSettings is the key/value pairs to announce via the XSETTINGS mechanism.
@@ -72,7 +72,8 @@ var actions = map[int32]struct {
 	+' ':      {doExec, []string{"google-chrome"}},
 	^' ':      {doExec, []string{"google-chrome", "--incognito"}},
 	^'|':      {doExec, []string{"gnome-screensaver-command", "-l"}},
-	+xkReturn: {doExec, []string{"gnome-terminal"}},
+	+'m':      {doExec, []string{"emacs"}},
+	+xkReturn: {doExec, []string{"terminator"}},
 	^xkReturn: {doExec, []string{"dmenu_run", "-nb", "#0f0f0f", "-nf", "#3f7f3f",
 		"-sb", "#0f0f0f", "-sf", "#7fff7f", "-l", "10"}},
 
@@ -137,8 +138,6 @@ var actions = map[int32]struct {
 
 	+'i': {doSynthetic, xp.Button(4)},
 	^'I': {doSynthetic, xp.Button(4)},
-	+'m': {doSynthetic, xp.Button(5)},
-	^'M': {doSynthetic, xp.Button(5)},
 	+'y': {doSynthetic, xp.Keysym(xkHome)},
 	^'Y': {doSynthetic, xp.Keysym(xkHome)},
 	+'u': {doSynthetic, xp.Keysym(xkPageUp)},
@@ -155,10 +154,6 @@ var actions = map[int32]struct {
 	^'B': {doSynthetic, xp.Keysym(xkEnd)},
 	+'n': {doSynthetic, xp.Keysym(xkPageDown)},
 	^'N': {doSynthetic, xp.Keysym(xkPageDown)},
-	+',': {doSynthetic, xp.Keysym(xkBackspace)},
-	^'<': {doSynthetic, xp.Keysym(xkBackspace)},
-	+'.': {doSynthetic, xp.Keysym(xkDelete)},
-	^'>': {doSynthetic, xp.Keysym(xkDelete)},
 
 	+'/': {doProgramAction, paTabNew},
 	^'?': {doProgramAction, paTabClose},
@@ -166,11 +161,20 @@ var actions = map[int32]struct {
 	+'v': {doProgramAction, paTabNext},
 	+'o': {doProgramAction, paCopy},
 	^'O': {doProgramAction, paCut},
-	+'p': {doProgramAction, paPaste},
-	^'P': {doProgramAction, paPasteSpecial},
+	//	+'p': {doProgramAction, paPaste},
+	//	^'P': {doProgramAction, paPasteSpecial},
 	+'z': {doProgramAction, paZoomIn},
 	^'Z': {doProgramAction, paZoomReset},
 	+'x': {doProgramAction, paZoomOut},
+
+	// mouse handling
+	+xkRight:  {doChangePointerHoriz, int16(10)},
+	+xkLeft:   {doChangePointerHoriz, int16(-10)},
+	+xkUp:     {doChangePointerVert, int16(-10)},
+	+xkDown:   {doChangePointerVert, int16(10)},
+	+xkInsert: {doSynthetic, xp.Button(1)},
+	+xkHome:   {doSynthetic, xp.Button(2)},
+	+xkPageUp: {doSynthetic, xp.Button(3)},
 }
 
 // programAction is an action for a particular program to invoke, as opposed
