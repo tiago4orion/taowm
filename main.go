@@ -1,8 +1,11 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
+	"net"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/BurntSushi/xgb"
@@ -301,6 +304,8 @@ func main() {
 		}
 	}
 
+	go cmdServer()
+
 	// Process X events.
 	eeChan := make(chan xEventOrError)
 	go func() {
@@ -365,5 +370,50 @@ func main() {
 				log.Printf("unhandled event: %v", ee.event)
 			}
 		}
+	}
+}
+
+func handleClient(c net.Conn) {
+	defer c.Close()
+
+	data, err := ioutil.ReadAll(c)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+
+	cmd := strings.TrimSpace(string(data))
+
+	switch cmd {
+	case "hsplit":
+		doSplit(screens[0].workspace, horizontal)
+	case "vsplit":
+		doSplit(screens[0].workspace, vertical)
+	default:
+		doExec(nil, []string{cmd})
+
+	}
+	_, err = c.Write([]byte("OK\n"))
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+
+}
+
+func cmdServer() {
+	os.Remove("/tmp/taowm.sock")
+	l, err := net.Listen("unix", "/tmp/taowm.sock")
+	if err != nil {
+		log.Fatal("listen error:", err)
+	}
+
+	for {
+		fd, err := l.Accept()
+		if err != nil {
+			log.Fatal("accept error:", err)
+		}
+
+		handleClient(fd)
 	}
 }
