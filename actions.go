@@ -541,6 +541,7 @@ func doProgramAction(k *workspace, pa1 interface{}) bool {
 
 func doSynthetic(k *workspace, buttonOrKeysym interface{}) bool {
 	if w := k.focusedFrame.window; w != nil {
+		log.Printf("here")
 		sendSynthetic(w, keyState, buttonOrKeysym)
 	}
 	return false
@@ -696,5 +697,11 @@ func doChangePointerVert(_ *workspace, offset interface{}) bool {
 		int16(x),
 		int16(y)+offset.(int16),
 	))
+	return true
+}
+
+func doChangePointer(xOffset, yOffset int16) bool {
+	doChangePointerHoriz(nil, xOffset)
+	doChangePointerVert(nil, yOffset)
 	return true
 }

@@ -1,10 +1,11 @@
 package main
 
 import (
-	"io/ioutil"
+	"fmt"
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -373,47 +374,68 @@ func main() {
 	}
 }
 
-func handleClient(c net.Conn) {
-	defer c.Close()
-
-	data, err := ioutil.ReadAll(c)
-	if err != nil {
-		log.Println(err.Error())
-		return
-	}
-
+func handleData(data []byte) {
 	cmd := strings.TrimSpace(string(data))
 
-	switch cmd {
-	case "hsplit":
-		doSplit(screens[0].workspace, horizontal)
-	case "vsplit":
-		doSplit(screens[0].workspace, vertical)
+	switch {
+	case cmd == "click":
+		x, y, err := getPointer()
+		if err != nil {
+			log.Printf("error: %s", err.Error())
+			return
+		}
+
+		keyState = 1 << 8
+		workspace := screenContaining(x, y).workspace
+		log.Printf("%s", doSynthetic(workspace, xp.Button(1)))
+		log.Printf("click at: %d, %d", x, y)
+	case strings.HasPrefix(cmd, "mouse: "):
+		mouseData := strings.Split(cmd[7:], ",")
+		if len(mouseData) != 2 {
+			log.Printf("Expected mouse: x,y,width,height")
+			return
+		}
+
+		xStr := mouseData[0]
+		yStr := mouseData[1]
+		x, err := strconv.Atoi(xStr)
+		if err != nil {
+			log.Printf("invalid mouse x position = %s", xStr)
+			return
+		}
+		y, err := strconv.Atoi(yStr)
+		if err != nil {
+			log.Printf("invalid mouse y position = %s", yStr)
+			return
+		}
+
+		log.Printf("moving: %d, %d", x, y)
+		doChangePointer(int16(x), int16(y))
 	default:
 		doExec(nil, []string{cmd})
 
 	}
-	_, err = c.Write([]byte("OK\n"))
-	if err != nil {
-		log.Println(err.Error())
-		return
-	}
-
 }
 
 func cmdServer() {
-	os.Remove("/tmp/taowm.sock")
-	l, err := net.Listen("unix", "/tmp/taowm.sock")
+	sAddr, err := net.ResolveUDPAddr("udp", ":2501")
+	if err != nil {
+		log.Fatal("impossible to listen at 2501 udp")
+	}
+	conn, err := net.ListenUDP("udp", sAddr)
 	if err != nil {
 		log.Fatal("listen error:", err)
 	}
 
-	for {
-		fd, err := l.Accept()
-		if err != nil {
-			log.Fatal("accept error:", err)
-		}
+	defer conn.Close()
 
-		handleClient(fd)
+	buf := make([]byte, 1024)
+
+	for {
+		n, _, err := conn.ReadFromUDP(buf)
+		if err != nil {
+			fmt.Println("Error: ", err)
+		}
+		handleData(buf[:n])
 	}
 }

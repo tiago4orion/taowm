@@ -22,9 +22,9 @@ const (
 
 	// fontXxx are the font metrics for X11's default font (fixed).
 	// fontHeight1 is the vertical offset for the first line of text.
-	fontHeight  = 16
-	fontHeight1 = 9
-	fontWidth   = 6
+	fontHeight  = 28
+	fontHeight1 = 18
+	fontWidth   = 15
 
 	// pulseXxx are the animation durations.
 	pulseFrameDuration = 50 * time.Millisecond
@@ -169,9 +169,13 @@ var actions = map[int32]struct {
 
 	// mouse handling
 	+xkRight:  {doChangePointerHoriz, int16(10)},
+	^xkRight:  {doChangePointerHoriz, int16(70)},
 	+xkLeft:   {doChangePointerHoriz, int16(-10)},
+	^xkLeft:   {doChangePointerHoriz, int16(-70)},
 	+xkUp:     {doChangePointerVert, int16(-10)},
+	^xkUp:     {doChangePointerVert, int16(-70)},
 	+xkDown:   {doChangePointerVert, int16(10)},
+	^xkDown:   {doChangePointerVert, int16(70)},
 	+xkInsert: {doSynthetic, xp.Button(1)},
 	+xkHome:   {doSynthetic, xp.Button(2)},
 	+xkPageUp: {doSynthetic, xp.Button(3)},
